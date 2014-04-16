@@ -6,6 +6,15 @@ from .version import *
 from .http import *
 from .conf import config
 
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError:
+        raise
+
+
 class PostmasterObject(object):
     """
     Base object for Postmaster.  Allows slightly easlier access to data and
@@ -354,7 +363,8 @@ def get_transit_time(from_zip, to_zip, weight, carrier=None, commercial=False,
 
 def get_rate(from_zip, to_zip, weight, carrier=None, service=None,
              commercial=False, packaging=None,
-             from_country=None, to_country=None):
+             from_country=None, to_country=None,
+             length=None, height=None, width=None):
     """
     Find the cost to ship a package from point A to point B.
     """
@@ -368,6 +378,9 @@ def get_rate(from_zip, to_zip, weight, carrier=None, service=None,
         carrier=carrier,
         service=service,
         packaging=packaging,
+        length=length,
+        height=height,
+        width=width
     )
     return rate.put()
 
@@ -380,10 +393,9 @@ class Track(PostmasterObject):
 
     PATH = '/v1/track'
 
-    def __init__(self, tracking_no, order_no=None, sms=None, url=None, events=[]):
+    def __init__(self, tracking_no, sms=None, url=None, events=[]):
         """
         * tracking_no - Carrier waybill (tracking number)
-        * order_no - order number to associate with this package
         * sms - URL to receive callback with JSON payload  (or url)
         * url - Phone number to receive notification sms (or sms)
         * events (optional) - List of events wants to be notified. Options are:
@@ -391,7 +403,6 @@ class Track(PostmasterObject):
         """
         kwargs = dict(
             tracking_no=tracking_no,
-            order_no=order_no,
             events=events,
         )
         if url:
